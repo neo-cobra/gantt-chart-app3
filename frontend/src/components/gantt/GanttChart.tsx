@@ -40,6 +40,7 @@ interface GanttChartProps {
   projectId: string;
 }
 
+// Extend the base Task type from gantt-task-react
 interface GanttTask extends Task {
   _id: string;
 }
@@ -59,7 +60,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
         start: new Date(task.startDate),
         end: new Date(task.endDate),
         progress: task.progress / 100,
-        type: task.type === 'milestone' ? 'milestone' : 'task',
+        type: task.type === 'milestone' ? 'milestone' as const : 'task' as const,
         isDisabled: task.isDisabled,
         styles: { progressColor: '#2ecc71', progressSelectedColor: '#27ae60' },
         dependencies: task.dependencies.map((dep: any) => dep._id || dep),
@@ -68,14 +69,14 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
 
       // Add project as a root task if it exists
       if (currentProject) {
-        const projectTask = {
+        const projectTask: GanttTask = {
           _id: currentProject._id,
           id: currentProject._id,
           name: currentProject.name,
           start: new Date(currentProject.startDate),
           end: new Date(currentProject.endDate),
           progress: calculateProjectProgress(tasks),
-          type: 'project',
+          type: 'project' as const,
           isDisabled: false,
           hideChildren: false,
           styles: { progressColor: '#3498db', progressSelectedColor: '#2980b9' }
@@ -83,7 +84,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
         
         setGanttTasks([projectTask, ...formattedTasks]);
       } else {
-        setGanttTasks(formattedTasks);
+        setGanttTasks(formattedTasks as GanttTask[]);
       }
     } else {
       setGanttTasks([]);
@@ -126,7 +127,16 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
   };
 
   // Styling options
-  const columnWidth = view === ViewMode.Year ? 350 : view === ViewMode.Month ? 300 : 60;
+  const getColumnWidth = () => {
+    switch (view) {
+      case ViewMode.Year:
+        return 350;
+      case ViewMode.Month:
+        return 300;
+      default:
+        return 60;
+    }
+  };
 
   return (
     <GanttContainer>
@@ -171,8 +181,8 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId }) => {
           onProgressChange={handleProgressChange}
           onDoubleClick={handleTaskClick}
           onExpanderClick={handleExpanderClick}
-          listCellWidth={columnWidth}
-          columnWidth={columnWidth}
+          listCellWidth={`${getColumnWidth()}px`}
+          columnWidth={getColumnWidth()}
         />
       ) : (
         <NoTasks>
